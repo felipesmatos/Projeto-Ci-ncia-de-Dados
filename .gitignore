@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# arquivos criados pelo script
+*.zip
