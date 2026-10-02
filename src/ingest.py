@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import gdown
 import re
+import os
 
 def baixar_dados_prf(ano, palavra_chave="multa"):
     url_portal = "https://www.gov.br/prf/pt-br/acesso-a-informacao/dados-abertos/dados-abertos-da-prf"
@@ -9,16 +10,19 @@ def baixar_dados_prf(ano, palavra_chave="multa"):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
     }
-    
+
+    pasta_destino = "./data/raw"
+    os.makedirs(pasta_destino, exist_ok=True)
     print(f"[{ano}] Acessando o portal da PRF...")
+
     try:
-        response = requests.get(url_portal, headers=headers)
-        response.raise_for_status()
+        resposta = requests.get(url_portal, headers=headers)
+        resposta.raise_for_status()
     except Exception as e:
         print(f"Erro ao acessar o portal: {e}")
         return None
 
-    soup = BeautifulSoup(response.content, 'html.parser')
+    soup = BeautifulSoup(resposta.content, 'html.parser')
     link_download = None
     
     # o objetivo aqui é procurar todas as linhas da tabela e achar uma que se encaixe nos requisistos
@@ -39,23 +43,25 @@ def baixar_dados_prf(ano, palavra_chave="multa"):
         print(f"[{ano}] Link de download não encontrado na página para o ano {ano}.")
         return None
 
-    # os prints são para ter maior controle  das operações e para debug
+     # os prints são para ter maior controle  das operações e para debug
     print(f"[{ano}] Link encontrado: {link_download}")
     nome_arquivo = f"infracoes_prf_{ano}.zip"
-    print(f"[{ano}] Iniciando o download de {nome_arquivo}...")
+    caminho_data = os.path.join(pasta_destino, nome_arquivo)
+    print(f"[{ano}] Iniciando o download de {nome_arquivo} para {caminho_data}...")
 
-    # como os arquivos estão hospedados no drive, estamos utilizando a biblioteca gdown para fazer o download
+     # como os arquivos estão hospedados no drive, estamos utilizando a biblioteca gdown para fazer o download
     try:
         match = re.search(r'/d/([a-zA-Z0-9_-]+)', link_download)
         
         if match:
-            file_id = match.group(1)
-            gdown.download(id=file_id, output=nome_arquivo, quiet=False)
+            id_arquivo = match.group(1)
+            gdown.download(id=id_arquivo, output=caminho_data, quiet=False)
         else:
-            gdown.download(url=link_download, output=nome_arquivo, quiet=False)
+            gdown.download(url=link_download, output=caminho_data, quiet=False)
             
-        print(f"[{ano}] Download finalizado: {nome_arquivo}\n")
-        return nome_arquivo
+        print(f"[{ano}] Download finalizado: {caminho_data}\n")
+        return caminho_data
+    
     except Exception as e:
         print(f"[{ano}] Erro durante o download com gdown: {e}\n")
         return None
@@ -64,4 +70,4 @@ def baixar_dados_prf(ano, palavra_chave="multa"):
 anos_desejados = [2023, 2024]
 
 for ano in anos_desejados:
-    baixar_dados_prf(ano, palavra_chave="multa")
+    baixar_dados_prf(ano, palavra_chave="acidentes")
